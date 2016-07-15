@@ -34,6 +34,7 @@ cmd_set_def_t cmd_set;
 mum g_mum;
 xQueueHandle xQueue;
 uint8_t sem_get_prop;
+uint8_t semnetnotify;
 static device_status_t running_status;
 static uint8_t buffer[UART_BUFFER_LEN];
 
@@ -54,6 +55,11 @@ void supor2mi_loop(void)
 	    LOG_INFO("received get_prop sem \r\n");
         send_check_command_to_device(0x03,0x02,NULL);
 		sem_get_prop = 0;
+	}
+	if(semnetnotify==1)
+	{
+		send_check_command_to_device(0x0d,0x00,NULL);
+		semnetnotify = 0;
 	}
   
 }
@@ -400,7 +406,18 @@ uint32_t send_check_command_to_device(uint8_t cmd,uint8_t action,cmd_set_def_t *
   }
   else if(cmd == WIFISTATUS)
   {
-	
+	 *p= 11;
+	 *(p+1)= 0xFF;
+	 *(p+2)= 0xFF;
+	 *(p+3) = 0x00;
+	 *(p+4) = 0x07;
+	 *(p+5) = cmd;
+	 *(p+6) = 0x01;
+	 *(p+7) = 0x00;
+	 *(p+8) = 0x00;
+	 *(p+9) = 0x00;
+	 *(p+10) = g_provisioned.state;
+	 *(p+11) = calculate_lrc(p+3,*p-3);
   }
   else if(cmd == REBINDING)
   {

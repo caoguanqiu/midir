@@ -163,6 +163,7 @@ extern cmd_set_def_t cmd_set;
 extern mum g_mum;
 extern xQueueHandle xQueue;
 extern uint8_t sem_get_prop;
+extern uint8_t semnetnotify;
 
 
 #endif

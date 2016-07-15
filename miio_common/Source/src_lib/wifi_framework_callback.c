@@ -54,6 +54,8 @@
 #include <crc32.h>
 #include <lib/config_router.h>
 
+#include <communication.h>
+
 #define FACTORY_NET_SSID        "miio_default"
 #define FACTORY_NET_PASSPHASE   "0x82562647"
 
@@ -114,6 +116,7 @@ void led_network_state_observer(device_network_state_t state)
 {
     switch(state) {
         case WAIT_SMT_TRIGGER:
+			semnetnotify=1;
             if(is_provisioned()) {
                 led_connecting();
 #ifdef MIIO_COMMANDS
@@ -127,24 +130,28 @@ void led_network_state_observer(device_network_state_t state)
             }
             break;
         case UAP_WAIT_SMT:
+			semnetnotify=1;
             led_diagnosing();
 #ifdef MIIO_COMMANDS
             mcmd_enqueue_raw("MIIO_net_change uap");
 #endif
             break;
         case SMT_CONNECTING:
+			semnetnotify=1;
             led_connecting();
 #ifdef MIIO_COMMANDS
             mcmd_enqueue_raw("MIIO_net_change offline");
 #endif
             break;
         case GOT_IP_NORMAL_WORK:
+			semnetnotify=1;
             led_connected();
 #ifdef MIIO_COMMANDS
             mcmd_enqueue_raw("MIIO_net_change local");
 #endif
             break;
         case SMT_CFG_STOP:
+			semnetnotify=1;
             led_stop();
 #ifdef MIIO_COMMANDS
             mcmd_enqueue_raw("MIIO_net_change stop");
@@ -157,6 +164,7 @@ static int one_time_flag = 0;
 static d0_event_ret_t ot_online_notifier(struct d0_event* evt, void* ctx)
 {
         LOG_DEBUG("===>online event \r\n");
+		semnetnotify=1;
         if(one_time_flag == 0) {
             report_ota_state();
             one_time_flag = 1;
