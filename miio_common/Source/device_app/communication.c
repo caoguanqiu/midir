@@ -35,6 +35,8 @@ mum g_mum;
 xQueueHandle xQueue;
 uint8_t sem_get_prop;
 uint8_t semnetnotify;
+uint8_t onlineflag;
+device_network_state_t state_config;
 static device_status_t running_status;
 static uint8_t buffer[UART_BUFFER_LEN];
 
@@ -304,13 +306,15 @@ void device_cmd_process(uint8_t *buf, int inlen)
 	}
 	else if( UPNETCONFIG == *(p+CMD))
 	{
+	   send_check_command_to_device(RENETCONFIG,0,NULL);
 	   LOG_INFO("recive UPNETCONFIG \r\n");
 
 
 	}
 	else if( UPRESETNET == *(p+CMD))
 	{
-     	LOG_INFO("recive UPRESETNET \r\n");
+     	send_check_command_to_device(RERESETNET,0,NULL);
+		LOG_INFO("recive UPRESETNET \r\n");
 	    wmprintf("start deprovisioning\r\n");
         if(is_provisioned()) 
 	    {
@@ -319,11 +323,13 @@ void device_cmd_process(uint8_t *buf, int inlen)
     }	
 	else if( UPTESTMODE == *(p+CMD))
 	{
+	   send_check_command_to_device(RETESTMODE,0,NULL);
 	   LOG_INFO("recive UPTESTMODE \r\n");
 
 	}
 	else if( UPBINDING == *(p+CMD))
 	{
+	   send_check_command_to_device(REBINDING,0,NULL);
 	   LOG_INFO("recive UPBINDING \r\n");
 	}
 
@@ -334,6 +340,7 @@ uint32_t send_check_command_to_device(uint8_t cmd,uint8_t action,cmd_set_def_t *
 {
 
   uint8_t *p;
+  uint8_t temp=0;
   int i=0;
   device_cmd_head_t *p_out;
   p = (char *) buffer;//(device_cmd_head_t *)buffer;
@@ -398,11 +405,30 @@ uint32_t send_check_command_to_device(uint8_t cmd,uint8_t action,cmd_set_def_t *
   }
   else if(cmd == RENETCONFIG)
   {
-	
+	*p= 9;
+	*(p+1)= 0xFF;
+	*(p+2)= 0xFF;
+	*(p+3) = 0x00;
+	*(p+4) = 0x05;
+	*(p+5) = cmd;
+    *(p+6) = 0x01;
+	*(p+7) = 0x00;
+	*(p+8) = 0x00;
+    *(p+9) = calculate_lrc(p+3,*p-3);
   }
   else if(cmd == RERESETNET)
   {
-	
+	*p= 9;
+	*(p+1)= 0xFF;
+	*(p+2)= 0xFF;
+	*(p+3) = 0x00;
+	*(p+4) = 0x05;
+	*(p+5) = cmd;
+    *(p+6) = 0x01;
+	*(p+7) = 0x00;
+	*(p+8) = 0x00;
+    *(p+9) = calculate_lrc(p+3,*p-3);
+
   }
   else if(cmd == WIFISTATUS)
   {
@@ -415,13 +441,61 @@ uint32_t send_check_command_to_device(uint8_t cmd,uint8_t action,cmd_set_def_t *
 	 *(p+6) = 0x01;
 	 *(p+7) = 0x00;
 	 *(p+8) = 0x00;
+	if((state_config==WAIT_SMT_TRIGGER)||(state_config==UAP_WAIT_SMT))
+	{
+		temp &= 0x8F;
+		temp |= 0x00;
+	}
+	else if(state_config==SMT_CONNECTING)
+	{
+		temp &= 0x8F;
+		temp |= 0x10;
+	}
+	else if(state_config==GOT_IP_NORMAL_WORK)
+	{
+		temp &= 0x8F;
+		temp |= 0x20;
+		if(onlineflag==1)
+	    {
+		  temp |= 0x30;
+	    }
+	}
+	else if(state_config==SMT_CFG_STOP)
+	{
+		temp &= 0x8F;
+		temp |= 0x40;
+	}
+	
+
 	 *(p+9) = 0x00;
-	 *(p+10) = g_provisioned.state;
+	 *(p+10) = temp;
 	 *(p+11) = calculate_lrc(p+3,*p-3);
+  }
+  else if(cmd == RETESTMODE)
+  {
+	*p= 9;
+	*(p+1)= 0xFF;
+	*(p+2)= 0xFF;
+	*(p+3) = 0x00;
+	*(p+4) = 0x05;
+	*(p+5) = cmd;
+    *(p+6) = 0x01;
+	*(p+7) = 0x00;
+	*(p+8) = 0x00;
+    *(p+9) = calculate_lrc(p+3,*p-3);
   }
   else if(cmd == REBINDING)
   {
-	
+	*p= 9;
+	*(p+1)= 0xFF;
+	*(p+2)= 0xFF;
+	*(p+3) = 0x00;
+	*(p+4) = 0x05;
+	*(p+5) = cmd;
+    *(p+6) = 0x01;
+	*(p+7) = 0x00;
+	*(p+8) = 0x00;
+    *(p+9) = calculate_lrc(p+3,*p-3);
   }
   
   buffer[0] = get_final_data(&buffer[1],buffer[0]);

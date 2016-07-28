@@ -164,6 +164,8 @@ extern mum g_mum;
 extern xQueueHandle xQueue;
 extern uint8_t sem_get_prop;
 extern uint8_t semnetnotify;
+extern uint8_t onlineflag;
+extern device_network_state_t state_config;
 
 
 #endif

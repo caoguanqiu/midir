@@ -46,7 +46,7 @@
 #define MAX_REPORT_RETRY 2 
 
 
-const int MIIO_APP_VERSION = 706;
+const int MIIO_APP_VERSION = 720;
 
 static os_semaphore_t btn_pressed_sem;
 static os_timer_t g_reset_prov_timer;
@@ -184,7 +184,7 @@ void miio_app_thread(void* arg)
 
     miio_led_on();
 	
-	while(NULL == otn_is_online()) api_os_tick_sleep(100);
+	//while(NULL == otn_is_online()) api_os_tick_sleep(100);
 	
 	mum_set_property(g_mum, "start", "\"off\"");
     mum_set_property(g_mum, "ingredients", "13");

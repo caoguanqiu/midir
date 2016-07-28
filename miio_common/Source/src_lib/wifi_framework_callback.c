@@ -80,6 +80,7 @@ struct provisioned_t g_provisioned = {
 		.state = 0
 };
 
+
 static char dhcp_name_strval[120];
 uint8_t token[16];       //should put into psm
 extern os_queue_t main_thread_sched_queue;
@@ -156,8 +157,9 @@ void led_network_state_observer(device_network_state_t state)
 #ifdef MIIO_COMMANDS
             mcmd_enqueue_raw("MIIO_net_change stop");
 #endif
-            break;
+            break;        
     }
+	state_config = state;
 }
 
 static int one_time_flag = 0;
@@ -165,11 +167,20 @@ static d0_event_ret_t ot_online_notifier(struct d0_event* evt, void* ctx)
 {
         LOG_DEBUG("===>online event \r\n");
 		semnetnotify=1;
+		onlineflag =1;
         if(one_time_flag == 0) {
             report_ota_state();
             one_time_flag = 1;
         }
 }
+
+static d0_event_ret_t ot_offline_notifier(struct d0_event* evt, void* ctx)
+{
+        LOG_DEBUG("===>offline event \r\n");
+		semnetnotify=1;
+		onlineflag = 0;        
+}
+
 
 static int start_otd(void)
 {
@@ -406,6 +417,7 @@ void event_wlan_init_done(void *data)
     OTN_OFFLINE(mum_offline_notifier);
 #endif
     OTN_ONLINE(ot_online_notifier);
+    OTN_ONLINE(ot_offline_notifier);
 
     //generate dhcp name
     strcpy(dhcp_name_strval,cfg_struct.model);
